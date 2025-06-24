@@ -1,7 +1,3 @@
-SELECT*
-FROM "film";
--- 1.Crea el esquema de la BBDD
-
 -- 2.Muestra los nombres de todas las peliculas con una clasificacion por edades de 'R'
 SELECT f.title, 
 	   f.rating
@@ -18,7 +14,7 @@ WHERE a.actor_id BETWEEN 30 AND 40;
 
 SELECT f.title
 FROM film f 
-WHERE f.original_language_id = f.language_id;
+WHERE f.original_language_id IS NULL;
 
 -- NOTA: En la tabla "film", todos los registros para la columna "original_language_id" son NULL
 
@@ -32,7 +28,7 @@ ORDER BY f.length;
 
 SELECT CONCAT(a.first_name, ' ', a.last_name) AS "NombreCompleto"
 FROM actor a 
-WHERE a.last_name LIKE '%ALLEN%';
+WHERE a.last_name ILIKE '%allen%';
 
 -- 7.Encuentra la cantidad total de peliculas en cada clasificacion de la tabla
 -- "film" y muestra la clasificacion junto con el recuento
@@ -92,7 +88,7 @@ SELECT f.title, f.length
 FROM film f 
 WHERE f.length > 180;
 
--- 15.¿Cuánto dinero ha generado en total la empresa?
+-- 15.¿Cuánto dinero ha generado en total la empresa?
 
 SELECT SUM(p.amount)
 FROM payment p ;
@@ -110,7 +106,7 @@ SELECT CONCAT (a.first_name, ' ', a.last_name) AS "Nombre_Actor"
 FROM actor a 
 JOIN film_actor fa ON a.actor_id = fa.actor_id
 JOIN film f ON fa.film_id = f.film_id
-WHERE f.title = 'EGG IGBY';
+WHERE f.title ILIKE 'egg igby';
 
 -- 18.Selecciona todos los nombres de las peliculas unicos
 
@@ -132,11 +128,11 @@ SELECT AVG(f.length) AS "Promedio_Duracion", c."name"
 FROM film f
 JOIN film_category fc  ON f.film_id = fc.film_id
 JOIN category c ON c.category_id = fc.category_id
-GROUP BY c."name" HAVING AVG (f.length) > 110;
+GROUP BY c."name" HAVING AVG (f.length) > 100;
 
--- 21.¿Cuál es la media de duración del alquiler de las películas?
+-- 21.¿Cuál es la media de duración del alquiler de las películas?
 
-SELECT AVG(f.length) AS "Media_Duracion"
+SELECT AVG(f.rental_duration) AS "Media_Duracion"
 FROM film f ;
 
 -- 22. Crea una columna con el nombre y apellidos de todos los actores y actrices
@@ -146,10 +142,11 @@ FROM actor a ;
 
 -- 23. Numeros de alquiler por dia, ordenados por cantidad de alquiler de forma descendente
 
-SELECT SUM (r.rental_id ) AS "Alquileres_Diarios"
+SELECT r.rental_date , 
+	   COUNT (*) AS "Alquileres_Diarios"
 FROM rental r 
 GROUP BY r.rental_date
-ORDER BY SUM (r.rental_id ) DESC;
+ORDER BY COUNT(*) DESC;
 
 -- 24. Encuentra las peliculas con una duracion superior al promedio
 
@@ -174,7 +171,7 @@ SELECT AVG(p.amount) AS "Promedio",
 	   variance(p.amount) AS "Varianza"
 FROM payment p ;
 
--- 27.¿Qué películas se alquilan por encima del precio medio?
+-- 27.¿Qué películas se alquilan por encima del precio medio?
 
 SELECT f.title AS "Pelicula"
 FROM payment p 
@@ -245,7 +242,7 @@ SELECT concat(c.first_name,' ', c.last_name) AS "Nombre_Cliente",
 FROM customer c 
 LEFT JOIN rental r ON r.customer_id = c.customer_id
 LEFT JOIN payment p ON p.customer_id = c.customer_id
-GROUP BY "Nombre_Cliente"
+GROUP BY c.first_name,c.last_name
 ORDER BY SUM(p.amount)DESC
 LIMIT 5;
 
@@ -288,7 +285,7 @@ FROM film f
 LIMIT 5;
 
 -- 41.Agrupa los actores por su nombre y cuenta cuantos actores tienen el mismo nombre.
--- ¿Cuál es el nombre más repetido?
+-- ¿Cuál es el nombre más repetido?
 
 SELECT a.first_name,
 	   COUNT(a.first_name)
@@ -314,7 +311,7 @@ FROM customer c
 LEFT JOIN rental r ON r.customer_id = c.customer_id
 ORDER BY "Nombre_Cliente";
 
--- 44.Realiza un CROSS JOIN entre las tablas film y category. ¿Aporta valor esta consulta? ¿Por qué? Deja después de la consulta la contestación
+-- 44.Realiza un CROSS JOIN entre las tablas film y category. ¿Aporta valor esta consulta? ¿Por qué? Deja después de la consulta la contestación
 
 SELECT f.title, c.name AS categoria
 FROM film f
@@ -343,7 +340,7 @@ FROM actor a
 LEFT JOIN film_actor fa ON fa.actor_id = a.actor_id
 WHERE fa.film_id  IS NULL;
 
--- 47.Selecciona el nombre de los actores y la cantidad de películas en las que han participado.
+-- 47.Selecciona el nombre de los actores y la cantidad de películas en las que han participado.
 
 SELECT concat(a.first_name,' ', a.last_name) AS "Nombre_Actor",
 	   count(fa.film_id) AS "Cantidad_Peliculas"
@@ -391,11 +388,11 @@ GROUP BY c.customer_id;
 
 CREATE TEMPORARY TABLE "peliculas_alquiladas" AS
 SELECT f.title,
-	   sum(r.rental_id) AS "Total_Alquileres"
+	   COUNT(*) AS "Total_Alquileres"
 FROM rental r 
 JOIN inventory i ON i.inventory_id = r.inventory_id
 JOIN film f ON f.film_id = i.film_id
-GROUP BY f.title HAVING SUM(r.rental_id) > 10;
+GROUP BY f.title HAVING COUNT(*) > 10;
 
 -- 53.Encuentra el titulo de las peliculas que han sido alquiladas por el cliente con el nombre
 -- 'Tammy Sanders' y que aun no se han devuelto. Ordena los resultados alfabeticamente por titulo de pelicula.
@@ -405,8 +402,8 @@ FROM customer c
 JOIN rental r ON r.customer_id = c.customer_id
 JOIN inventory i ON i.inventory_id = r.inventory_id
 JOIN film f ON f.film_id = i.film_id
-WHERE c.first_name = 'TAMMY'
-  AND c.last_name = 'SANDERS'
+WHERE c.first_name ILIKE'tammy'
+  AND c.last_name ILIKE 'sanders'
   AND r.return_date IS NULL
 ORDER BY f.title;
 
@@ -423,7 +420,7 @@ WHERE c.name = 'Sci-Fi'
 ORDER BY a.last_name;
 
 -- 55.Encuentra el nombre y apellido de los actores que han actuado en peliculas que se alquilaron despues de que la pelicula
--- 'Spartacus Cehaper' se alquilara por primera vez. Ordena los resultados alfabeticamente por apellido.
+-- 'Spartacus Cheaper' se alquilara por primera vez. Ordena los resultados alfabeticamente por apellido.
 
 SELECT a.first_name, a.last_name
 FROM actor a 
@@ -436,7 +433,7 @@ WHERE r.rental_date > (
 						FROM rental r
 						JOIN inventory i ON i.inventory_id = r.inventory_id 
 						JOIN film f ON f.film_id = i.film_id 
-						WHERE f.title = 'SPARTACUS CHEAPER'
+						WHERE f.title ILIKE 'spartacus cheaper'
 						)
 ;
 
@@ -481,14 +478,14 @@ FROM film f
 WHERE f.length = (
 		SELECT f2.length 
 		FROM film f2
-		WHERE f2.title = 'DANCING FEVER'
+		WHERE f2.title ILIKE 'dancing fever'
 		)
 ORDER BY f.title;
 
 -- 60.Encuentra los nombre de cliente que han alquilado al menos 7 peliculas distintas. 
 -- Ordena los resultados alfabeticamente por apellido.
 
-SELECT c.first_name
+SELECT c.first_name, c.last_name
 FROM customer c 
 JOIN rental r ON r.customer_id = c.customer_id
 JOIN inventory i ON i.inventory_id = r.inventory_id
